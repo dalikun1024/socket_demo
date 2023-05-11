@@ -151,8 +151,8 @@ int send_gyroscope_data() {
     memset(socket_message.data, 0, sizeof(256));
     memcpy(p_type, &type, sizeof(int));
     memcpy(socket_message.data + sizeof(int), &gyro_data, sizeof(gyro_data));
-    *p_end = '\n';
-    return sizeof(gyro_data) + 5;
+    memcpy(p_end, "\n\n\t\t", sizeof(4));
+    return sizeof(gyro_data) + 8;
 }
 
 int send_gsensor_data() {
@@ -163,8 +163,8 @@ int send_gsensor_data() {
     memset(socket_message.data, 0, sizeof(256));
     memcpy(p_type, &type, sizeof(int));
     memcpy(socket_message.data + sizeof(int), &gsensor_data, sizeof(gsensor_data));
-    *p_end = '\n';
-    return sizeof(gsensor_data) + 5;
+    memcpy(p_end, "\n\n\t\t", sizeof(4));
+    return sizeof(gsensor_data) + 8;
 }
 
 int send_gps_data() {
@@ -187,6 +187,6 @@ int send_gps_data() {
     memset(socket_message.data, 0, sizeof(256));
     memcpy(p_type, &type, sizeof(int));
     memcpy(socket_message.data + sizeof(int), &gps_data_packed, sizeof(gps_data_packed));
-    *p_end = '\n';
-    return sizeof(gps_data_packed) + 5;
+    memcpy(p_end, "\n\n\t\t", sizeof(4));
+    return sizeof(gps_data_packed) + 8;
 }
