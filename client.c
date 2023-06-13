@@ -31,6 +31,14 @@ typedef enum {
     GPS_POWER_CLOSED
 } gps_locate_status_e_type;
 
+typedef enum
+{
+    DR_IS_NOT_CALIBRATED,
+    DR_IS_CALIBRATING,
+    DR_IS_LIGHTLY_CALIBRATED,
+    DR_IS_FULLY_CALIBRATED,
+ }dr_calibrated_status_e_type;
+
 typedef struct FW_GPS_INFO_STRU {
     int azimuth; /*0-359*/
     int SNR; /*(C/No) 00 -- 99 dB*/
@@ -44,6 +52,13 @@ typedef struct FW_GPS_INFO_STRU {
     float vertical_accuracy; /*0-50 m*/
     int satellites_num ; /*0-24*/
     gps_locate_status_e_type status;/*gps fixed/health status*/
+    dr_calibrated_status_e_type calibration_status; /* dr calibrate states */
+    float vel_n;        /*m/s*/
+    float vel_e;        /*m/s*/
+    float vel_d;        /*m/s*/
+    float roll;         /*degree*/
+    float pitch;        /*degree*/
+    float heading;      /*degree*/
 } FW_GPS_INFO_STRU;
 
 typedef struct GPS_INFO_PACKED {
@@ -59,17 +74,24 @@ typedef struct GPS_INFO_PACKED {
     float vertical_accuracy; /*0-50 m*/
     int satellites_num ; /*0-24*/
     gps_locate_status_e_type status;/*gps fixed/health status*/
+    dr_calibrated_status_e_type calibration_status; /* dr calibrate states */
+    float vel_n;        /*m/s*/
+    float vel_e;        /*m/s*/
+    float vel_d;        /*m/s*/
+    float roll;         /*degree*/
+    float pitch;        /*degree*/
+    float heading;      /*degree*/
 } __attribute__((packed)) GPS_INFO_PACKED;
 
-
+#define SOCKET_MESSAGE_LENGTH 512
 typedef struct SOCKET_MESSAGE {
-    char data[512];
+    char data[SOCKET_MESSAGE_LENGTH];
     int length;
 } __attribute__((packed)) SOCKET_MESSAGE;
 
 static GYROSCOPE_INFO_STRU gyro_data = {1.0, 2.0, 3.0, 123.0};
 static GSENSOR_INFO_STRU gsensor_data = {0, 0, 1, 0, 123.0};
-static FW_GPS_INFO_STRU gps_data = {0, 0, 0, 0, 1, 2, 3, "20230510122800", 0, 0, 0, GPS_IS_FIXED };
+static FW_GPS_INFO_STRU gps_data = {0, 0, 0, 0, 1, 2, 3, "20230510122800", 0, 0, 0, GPS_IS_FIXED, DR_IS_FULLY_CALIBRATED, 0, 1, 2, 3, 4, 5};  
 static GPS_INFO_PACKED gps_data_packed;
 static SOCKET_MESSAGE socket_message;
 
@@ -111,18 +133,32 @@ int main(int argc, char** argv) {
         gps_data.azimuth = i;
         int buf_len = send_gps_data();
         printf("gps send len: %d %d\n", buf_len, i);
+        for(int i = 0; i < buf_len; ++i) {
+            printf("%02x", socket_message.data[i]);
+        }
+        printf("\n");
         if( send(sockfd, socket_message.data, buf_len, 0) < 0) {
             printf("send gyro msg error: %s(errno: %d)\n", strerror(errno), errno);
             exit(0);
         }
         gsensor_data.acc_x = i;
         buf_len = send_gsensor_data();
+        printf("gsensor send len: %d %d\n", buf_len, i);
+        for(int i = 0; i < buf_len; ++i) {
+            printf("%02x", socket_message.data[i]);
+        }
+        printf("\n");
         if( send(sockfd, socket_message.data, buf_len, 0) < 0) {
             printf("send gyro msg error: %s(errno: %d)\n", strerror(errno), errno);
             exit(0);
         }
         gyro_data.gyro_x = i;
         buf_len = send_gyroscope_data();
+        printf("gyro send len: %d %d\n", buf_len, i);
+        for(int i = 0; i < buf_len; ++i) {
+            printf("%02x", socket_message.data[i]);
+        }
+        printf("\n");
         if( send(sockfd, socket_message.data, buf_len, 0) < 0) {
             printf("send gyro msg error: %s(errno: %d)\n", strerror(errno), errno);
             exit(0);
@@ -148,9 +184,9 @@ int send_gyroscope_data() {
     char *p_type = socket_message.data;
     char *p_data = p_type + sizeof(int);
     char *p_end = p_data + sizeof(gyro_data);
-    memset(socket_message.data, 0, sizeof(256));
+    memset(socket_message.data, 0, sizeof(SOCKET_MESSAGE_LENGTH));
     memcpy(p_type, &type, sizeof(int));
-    memcpy(socket_message.data + sizeof(int), &gyro_data, sizeof(gyro_data));
+    memcpy(p_data, &gyro_data, sizeof(gyro_data));
     memcpy(p_end, "\n\n\t\t", sizeof(4));
     return sizeof(gyro_data) + 8;
 }
@@ -160,9 +196,9 @@ int send_gsensor_data() {
     char *p_type = socket_message.data;
     char *p_data = p_type + sizeof(int);
     char *p_end = p_data + sizeof(gsensor_data);
-    memset(socket_message.data, 0, sizeof(256));
+    memset(socket_message.data, 0, sizeof(SOCKET_MESSAGE_LENGTH));
     memcpy(p_type, &type, sizeof(int));
-    memcpy(socket_message.data + sizeof(int), &gsensor_data, sizeof(gsensor_data));
+    memcpy(p_data, &gsensor_data, sizeof(gsensor_data));
     memcpy(p_end, "\n\n\t\t", sizeof(4));
     return sizeof(gsensor_data) + 8;
 }
@@ -180,13 +216,20 @@ int send_gps_data() {
     gps_data_packed.vertical_accuracy = gps_data.vertical_accuracy; /*0-50 m*/
     gps_data_packed.satellites_num =  gps_data.satellites_num; /*0-24*/
     gps_data_packed.status = gps_data.status;
+    gps_data_packed.calibration_status = gps_data.calibration_status;
+    gps_data_packed.vel_n = gps_data.vel_n;
+    gps_data_packed.vel_e = gps_data.vel_e;
+    gps_data_packed.vel_d = gps_data.vel_d;
+    gps_data_packed.roll = gps_data.roll;
+    gps_data_packed.pitch = gps_data.pitch;
+    gps_data_packed.heading = gps_data.heading;
     int type = 2;
     char *p_type = socket_message.data;
     char *p_data = p_type + sizeof(int);
     char *p_end = p_data + sizeof(gps_data_packed);
-    memset(socket_message.data, 0, sizeof(256));
+    memset(socket_message.data, 0, sizeof(SOCKET_MESSAGE_LENGTH));
     memcpy(p_type, &type, sizeof(int));
-    memcpy(socket_message.data + sizeof(int), &gps_data_packed, sizeof(gps_data_packed));
+    memcpy(p_data, &gps_data_packed, sizeof(gps_data_packed));
     memcpy(p_end, "\n\n\t\t", sizeof(4));
     return sizeof(gps_data_packed) + 8;
 }

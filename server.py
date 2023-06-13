@@ -21,6 +21,8 @@ while True:
             continue
         fmt = 'i%ds' % (len(msg_data)-4)
         message_data = struct.unpack(fmt, msg_data)
+        print("message_data: type: ", message_data[0])
+        print("message_data: len: ", len(message_data[1]))
         if message_data[0] == 0:
             if (len(message_data[1]) != 16):
                 reserved_data = msg_data
@@ -34,11 +36,11 @@ while True:
             gsensor_data = struct.unpack('5f', message_data[1])
             print('gsensor_data: ', gsensor_data)
         elif message_data[0] == 2:
-            if (len(message_data[1]) != 84):
+            if (len(message_data[1]) != 112):
                 reserved_data = msg_data
                 continue
             print(len(message_data[1]))
-            gps_data = struct.unpack('=2i3f2d32s2f2i', message_data[1])
+            gps_data = struct.unpack('=2i3f2d32s2f3i6f', message_data[1])
             print('gps_data: ', gps_data)
         else:
             print("invalid socket data type")
