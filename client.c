@@ -5,6 +5,10 @@
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
+#if __APPLE__
+#include <unistd.h>
+#include <arpa/inet.h>
+#endif
 
 #define MAXLINE 1024
 
@@ -95,10 +99,15 @@ static FW_GPS_INFO_STRU gps_data = {0, 0, 0, 0, 1, 2, 3, "20230510122800", 0, 0,
 static GPS_INFO_PACKED gps_data_packed;
 static SOCKET_MESSAGE socket_message;
 
+
+int send_gps_data();
+int send_gsensor_data();
+int send_gyroscope_data();
+
 int main(int argc, char** argv) {
     // char address[] = "172.23.168.149";
     // char address[] = "192.168.158.100";
-    char address[] = "127.0.0.1";
+    char address[] = "192.168.1.200";
     int    sockfd, n;
     char    recvline[MAXLINE], sendline[MAXLINE];
     struct sockaddr_in    servaddr;

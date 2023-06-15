@@ -4,7 +4,7 @@ import struct
 s = socket.socket()
 port = 12345
 
-s.bind(('127.0.0.1', port))
+s.bind(('0.0.0.0', port))
 s.listen(1)
 c, addr = s.accept()
 print("connection address: ", addr)
