@@ -129,7 +129,7 @@ int gps_thread() {
     char    recvline[MAXLINE], sendline[MAXLINE];
     struct sockaddr_in    servaddr;
     SOCKET_MESSAGE socket_gps;
-    if( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         printf("create socket error: %s(errno: %d)\n", strerror(errno),errno);
         exit(0);
     }
@@ -140,10 +140,7 @@ int gps_thread() {
         printf("inet_pton error for %s\n", server_addr);
         exit(0);
     }
-    if( connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
-        printf("connect error: %s(errno: %d)\n",strerror(errno),errno);
-        exit(0);
-    }
+    
     printf("gps type size: %d\n", sizeof(FW_GPS_INFO_STRU));
     printf("gps dat size: %d\n", sizeof(gps_data));
     printf("gps dat size: %d\n", sizeof(GPS_INFO_PACKED));
@@ -156,7 +153,7 @@ int gps_thread() {
         //     printf("%hx", socket_gps.data[k]);
         // }
         // printf("\n");
-        if( send(sockfd, socket_gps.data, buf_len, 0) < 0) {
+        if( sendto(sockfd, socket_gps.data, buf_len, 0, &servaddr, sizeof(servaddr)) < 0) {
             printf("send gyro msg error: %s(errno: %d)\n", strerror(errno), errno);
             exit(0);
         }
@@ -180,7 +177,7 @@ int imu_thread() {
     char    recvline[MAXLINE], sendline[MAXLINE];
     struct sockaddr_in    servaddr;
     SOCKET_MESSAGE socket_imu;
-    if( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         printf("create socket error: %s(errno: %d)\n", strerror(errno),errno);
         exit(0);
     }
@@ -191,10 +188,7 @@ int imu_thread() {
         printf("inet_pton error for %s\n", server_addr);
         exit(0);
     }
-    if( connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
-        printf("connect error: %s(errno: %d)\n",strerror(errno),errno);
-        exit(0);
-    }
+    
     printf("gyro_data size: %d\n", sizeof(gyro_data));
     printf("gsensor_data size: %d\n", sizeof(gsensor_data));
     int i = 0;
@@ -206,13 +200,13 @@ int imu_thread() {
         //     printf("\\x%hx", socket_imu.data[k]);
         // }
         // printf("\n");
-        if( send(sockfd, socket_imu.data, buf_len, 0) < 0) {
+        if( sendto(sockfd, socket_imu.data, buf_len, 0, &servaddr, sizeof(servaddr)) < 0) {
             printf("send gyro msg error: %s(errno: %d)\n", strerror(errno), errno);
             exit(0);
         }
         gyro_data.gyro_x = i;
         buf_len = send_gyroscope_data(&socket_imu);
-        if( send(sockfd, socket_imu.data, buf_len, 0) < 0) {
+        if( sendto(sockfd, socket_imu.data, buf_len, 0, &servaddr, sizeof(servaddr)) < 0) {
             printf("send gyro msg error: %s(errno: %d)\n", strerror(errno), errno);
             exit(0);
         }
