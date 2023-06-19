@@ -108,6 +108,9 @@ int send_gyroscope_data();
 int gps_thread();
 int imu_thread();
 
+char server_addr[] = "127.0.0.1";
+uint port = 12345;
+
 int main(int argc, char** argv) {
     pthread_t imu_pid;
     pthread_t gps_pid;
@@ -122,7 +125,6 @@ int main(int argc, char** argv) {
 int gps_thread() {
     // char address[] = "172.23.168.149";
     // char address[] = "192.168.158.100";
-    char address[] = "127.0.0.1";
     int    sockfd, n;
     char    recvline[MAXLINE], sendline[MAXLINE];
     struct sockaddr_in    servaddr;
@@ -133,9 +135,9 @@ int gps_thread() {
     }
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(12345);
-    if( inet_pton(AF_INET, address, &servaddr.sin_addr) <= 0){
-        printf("inet_pton error for %s\n", address);
+    servaddr.sin_port = htons(port);
+    if( inet_pton(AF_INET, server_addr, &servaddr.sin_addr) <= 0){
+        printf("inet_pton error for %s\n", server_addr);
         exit(0);
     }
     if( connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
@@ -174,7 +176,6 @@ int gps_thread() {
 }
 
 int imu_thread() {
-    char address[] = "127.0.0.1";
     int    sockfd, n;
     char    recvline[MAXLINE], sendline[MAXLINE];
     struct sockaddr_in    servaddr;
@@ -185,9 +186,9 @@ int imu_thread() {
     }
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(12345);
-    if( inet_pton(AF_INET, address, &servaddr.sin_addr) <= 0){
-        printf("inet_pton error for %s\n", address);
+    servaddr.sin_port = htons(port);
+    if( inet_pton(AF_INET, server_addr, &servaddr.sin_addr) <= 0){
+        printf("inet_pton error for %s\n", server_addr);
         exit(0);
     }
     if( connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
